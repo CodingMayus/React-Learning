@@ -1,9 +1,6 @@
 import { useState } from "react";
 
-
-
-
- function Board({isXnext,squares,onPlay}){
+function Board({ isXnext, squares, onPlay }) {
   function handleClick(i) {
     //check if already moved here or already won
     if (squares[i] || calculateWinner(squares)) {
@@ -21,7 +18,7 @@ import { useState } from "react";
     } else {
       newSquares[i] = "O";
     }
-   onPlay(newSquares);
+    onPlay(newSquares);
     //or
   }
   // const [squares,setSquares]=useStates(Arrays(9).fill(null));
@@ -86,35 +83,63 @@ function calculateWinner(squares) {
   }
   return null;
 }
-export default function Game(){
+export default function Game() {
   //to add a history of the past games I need to be able to communicate between the different
-  //states of the board.  For these different boards to communicate with each other - 
+  //states of the board.  For these different boards to communicate with each other -
   // we introduce a higher-level component to allow for easy communication between children.
-   const [history, setHistory] = useState([
-      [null, null, null, null, null, null, null, null, null]
-    ]);
-    const [isXnext, setIsXNext] = useState(true);
-    const currentSquares = history[history.length-1];
-          // ol --> ordered list and making room for the game information
-  
-  function handlePlay(nextSquares){
-  setHistory([...history, nextSquares]);
-  setIsXNext(!isXnext);
-  //note that since we are not updating the board in the board component anymore
-  //we have to do it in the higher level compoent: the game.
-  //Here, [...history, nextSquares] creates a new array that contains all the items in history, followed by nextSquares.
+  const [history, setHistory] = useState([
+    [null, null, null, null, null, null, null, null, null],
+  ]);
+  const [currentMove, setCurrentMove]=useState(0);
+  const currentSquares = history[currentMove];
+  const isXnext = currentMove%2===0;
+  // ol --> ordered list and making room for the game information
+  // for list keys - normally its never good to have an increasing array index as the key as the list can rearranged and some elements could be added or deleted..  In this case as a list of previous moves it is perfectly fine.
+  function jumpTo(nextMove) {
+    setCurrentMove(nextMove);
+    //is it even? if true then X is next, as X starts at move index 0.
   }
-  
+
+  const moves = history.map((squares, move) => {
+    let description;
+    if (move > 0) {
+      description = "Go to move #" + move;
+    } else {
+      description = "Go to game start";
+    }
+
     return (
-      <>
-    <div className = "game">
-    <div className = "game-board">
-      <Board isXnext = {isXnext} squares = {currentSquares} onPlay={handlePlay}/>
-      </div>
-      <div className  = "game-info">
-        <ol> </ol>
-        </div>
-        </div>
-      </>
+      <li key = {move}>
+        <button onClick={() => jumpTo(move)}>{description}</button>
+      </li>
     );
+  });
+
+  function handlePlay(nextSquares) {
+//currentMove + 1 as the end is not included in the range so to include Currentmove its gotta be +1.
+
+const nextHistory = [...history.slice(0,currentMove+1),nextSquares];
+setHistory(nextHistory);
+    setCurrentMove(nextHistory.length-1);
+    //note that since we are not updating the board in the board component anymore
+    //we have to do it in the higher level compoent: the game.
+    //Here, [...history, nextSquares] creates a new array that contains all the items in history, followed by nextSquares.
   }
+
+  return (
+    <>
+      <div className="game">
+        <div className="game-board">
+          <Board
+            isXnext={isXnext}
+            squares={currentSquares}
+            onPlay={handlePlay}
+          />
+        </div>
+        <div className="game-info">
+          <ol>{moves}</ol>
+        </div>
+      </div>
+    </>
+  );
+}
